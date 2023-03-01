@@ -13,7 +13,7 @@ async function getAllUsers() {
 }
 
 async function getAllPosts() {
-  const { rows } = await client.query(
+  const {rows} = await client.query(
     `SELECT id, title 
       FROM posts;
     `
@@ -75,7 +75,7 @@ async function createPost({ authorId, title, content }) {
   try {
     const { rows } = await client.query(
       `
-          INSERT INTO users("authorId", title, content)
+          INSERT INTO posts("authorId", title, content)
           VALUES ($1, $2, $3)
           RETURNING *;
         `,

@@ -15,7 +15,7 @@ async function createInitialPosts() {
     const [albert, sandra, glamgal] = await getAllUsers();
 
     await createPost({
-      authorId: albert.id,
+      "authorId": albert.id,
       title: "First Post",
       content:
         "This is my first post. I hope I love writing blogs as much as I love writing them.",
@@ -59,6 +59,7 @@ async function createInitialUsers() {
 
 async function testDB() {
   try {
+
     console.log("Starting to test database...");
 
     console.log("Calling getAllUsers");
@@ -112,7 +113,7 @@ async function dropTables() {
 async function createTables() {
   try {
     console.log("Starting to build tables...");
-    await client.query(`
+  await client.query(`
         CREATE TABLE users (
             id SERIAL PRIMARY KEY,
             username varchar(255) UNIQUE NOT NULL,
@@ -123,7 +124,7 @@ async function createTables() {
           );
         `);
 
-    await client.query(`
+     await client.query(`
         CREATE TABLE posts (
             id SERIAL PRIMARY KEY,
             "authorId" INTEGER REFERENCES users(id) NOT NULL,
@@ -132,7 +133,6 @@ async function createTables() {
             active BOOLEAN DEFAULT true
         );
         `);
-
     console.log("Finished building tables!");
   } catch (error) {
     console.error("Error building tables!");
@@ -147,6 +147,7 @@ async function rebuildDB() {
     await dropTables();
     await createTables();
     await createInitialUsers();
+    await createInitialPosts();
   } catch (error) {
     console.error(error);
     throw error;
