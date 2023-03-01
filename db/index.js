@@ -33,4 +33,5 @@ module.exports = {
   client,
   getAllUsers,
   createUser,
+  updateUser
 };

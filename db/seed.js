@@ -1,7 +1,8 @@
 const {
   client,
   getAllUsers,
-  createUser, // new
+  createUser,
+  updateUser // new
 } = require("./index");
 
 async function createInitialUsers() {
@@ -39,9 +40,23 @@ async function testDB() {
     // connect the client to the database, finally
     console.log("Starting to test database...");
 
+
+
     // queries are promises, so we can await them
+    console.log("Calling getAllUsers")
     const users = await getAllUsers();
-    console.log("getAllUsers:", users);
+    console.log("Result:", users);
+
+
+    console.log("Calling updateUser on users[0]")
+    const updateUserResult = await updateUser(users[0].id, {
+        name: "Newname Sogood",
+        location: "Lesterville, KY"
+      });
+
+
+      console.log("Result:", updateUserResult);
+
 
     console.log("Finished database tests!");
   } catch (error) {
