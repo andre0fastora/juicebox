@@ -95,20 +95,22 @@ async function getUserById(userId) {
  * POST Methods
  */
 
-async function createPost({ authorId, title, content }) {
+async function createPost({
+  authorId,
+  title,
+  content,
+  tags = [] // this is new
+}) {
   try {
-    const {
-      rows: [post],
-    } = await client.query(
-      `
+    const { rows: [ post ] } = await client.query(`
       INSERT INTO posts("authorId", title, content) 
       VALUES($1, $2, $3)
       RETURNING *;
-    `,
-      [authorId, title, content]
-    );
+    `, [authorId, title, content]);
 
-    return post;
+    const tagList = await createTags(tags);
+
+    return await addTagsToPost(post.id, tagList);
   } catch (error) {
     throw error;
   }
@@ -146,12 +148,16 @@ async function updatePost(id, fields = {}) {
 
 async function getAllPosts() {
   try {
-    const { rows } = await client.query(`
-      SELECT *
+    const { rows: postIds } = await client.query(`
+      SELECT id
       FROM posts;
     `);
 
-    return rows;
+    const posts = await Promise.all(postIds.map(
+      post => getPostById( post.id )
+    ));
+
+    return posts;
   } catch (error) {
     throw error;
   }
@@ -159,13 +165,17 @@ async function getAllPosts() {
 
 async function getPostsByUser(userId) {
   try {
-    const { rows } = await client.query(`
-      SELECT * 
-      FROM posts
-      WHERE "authorId"=${userId};
+    const { rows: postIds } = await client.query(`
+      SELECT id 
+      FROM posts 
+      WHERE "authorId"=${ userId };
     `);
 
-    return rows;
+    const posts = await Promise.all(postIds.map(
+      post => getPostById( post.id )
+    ));
+
+    return posts;
   } catch (error) {
     throw error;
   }
@@ -177,7 +187,6 @@ async function createTags(tagList) {
     return;
   }
 
-  console.log(tagList, "taglist");
 
   // need something like: $1), ($2), ($3
   const insertValues = tagList.map((_, index) => `$${index + 1}`).join("), (");
@@ -190,7 +199,7 @@ async function createTags(tagList) {
   try {
     // insert the tags, doing nothing on conflict
     // returning nothing, we'll query after
-    let result = await client.query(
+    await client.query(
       `
     INSERT INTO tags(name)
     VALUES (${insertValues})
@@ -198,7 +207,6 @@ async function createTags(tagList) {
     `,
       tagList
     );
-    console.log(result, "result from insert qwery");
 
     // select all tags where the name is in our taglist
     // return the rows from the query
@@ -210,7 +218,6 @@ async function createTags(tagList) {
     `,
       tagList
     );
-    console.log(rows, "rows result from qwery");
     return rows;
   } catch (error) {
     throw error;
