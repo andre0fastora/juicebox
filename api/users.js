@@ -1,9 +1,15 @@
 // api/users.js
 const express = require("express");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 const usersRouter = express.Router();
-const { getAllUsers, getUserByUsername, createUser } = require("../db");
-
+const {
+  getAllUsers,
+  getUserByUsername,
+  createUser,
+  getUserById,
+  updateUser,
+} = require("../db");
+const { requireUser } = require("./utils");
 
 usersRouter.use((req, res, next) => {
   console.log("A request is being made to /users");
@@ -25,14 +31,17 @@ usersRouter.post("/login", async (req, res, next) => {
   try {
     const user = await getUserByUsername(username);
 
-    const token = jwt.sign({
-      username: user.username, 
-      id: user.id
-    }, process.env.JWT_SECRET)
+    const token = jwt.sign(
+      {
+        username: user.username,
+        id: user.id,
+      },
+      process.env.JWT_SECRET
+    );
 
     if (user && user.password == password) {
       // create token & return to user
-      res.send({ message: "you're logged in!" , token: token});
+      res.send({ message: "you're logged in!", token: token });
     } else {
       next({
         name: "IncorrectCredentialsError",
@@ -45,7 +54,7 @@ usersRouter.post("/login", async (req, res, next) => {
   }
 });
 
-usersRouter.post('/register', async (req, res, next) => {
+usersRouter.post("/register", async (req, res, next) => {
   const { username, password, name, location } = req.body;
 
   try {
@@ -53,8 +62,8 @@ usersRouter.post('/register', async (req, res, next) => {
 
     if (_user) {
       next({
-        name: 'UserExistsError',
-        message: 'A user by that username already exists'
+        name: "UserExistsError",
+        message: "A user by that username already exists",
       });
     }
 
@@ -65,20 +74,49 @@ usersRouter.post('/register', async (req, res, next) => {
       location,
     });
 
-    const token = jwt.sign({ 
-      id: user.id, 
-      username
-    }, process.env.JWT_SECRET, {
-      expiresIn: '1w'
-    });
+    const token = jwt.sign(
+      {
+        id: user.id,
+        username,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1w",
+      }
+    );
 
-    res.send({ 
+    res.send({
       message: "thank you for signing up",
-      token 
+      token,
     });
   } catch ({ name, message }) {
-    next({ name, message })
-  } 
+    next({ name, message });
+  }
+});
+
+usersRouter.delete("/:userId", requireUser, async (req, res, next) => {
+  const userId = Number(req.params.userId);
+  const _user = await getUserById(userId);
+
+  if (!_user) {
+    next({
+      name: "UserDoesNotExistsError",
+      message: "No user by that username",
+    });
+  }
+
+  console.log(userId, "<= this is userid from params");
+  console.log(req.user.id, "<= this is ureq.user.id from request object");
+
+  if (req.user.id !== userId) {
+    next({
+      name: "CantDeleteOtherUserError",
+      message: "You can not delete a user that is not you",
+    });
+  }
+
+  const deletedUser = await updateUser(userId, { active: false });
+  res.send({ DeletedUser: deletedUser });
 });
 
 usersRouter.get("/", async (req, res) => {
