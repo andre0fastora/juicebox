@@ -1,6 +1,6 @@
 const express = require("express");
 const postsRouter = express.Router();
-const { getAllPosts, createPost, updatePost, getPostById } = require("../db");
+const { getAllPosts, createPost, updatePost, getPostById, getUserById } = require("../db");
 
 postsRouter.use((req, res, next) => {
   console.log("A request is being made to /posts");
@@ -10,7 +10,7 @@ postsRouter.use((req, res, next) => {
 
 const { requireUser } = require("./utils");
 
-postsRouter.get("/", async (req, res) => {
+postsRouter.get("/", requireUser, async (req, res, next) => {
   // const posts = await getAllPosts();
 
   // res.send({
@@ -21,6 +21,7 @@ postsRouter.get("/", async (req, res) => {
     const allPosts = await getAllPosts();
 
     const posts = allPosts.filter((post) => {
+
       if (post.active) {
         return true;
       }
@@ -28,6 +29,10 @@ postsRouter.get("/", async (req, res) => {
       // the post is not active, but it belogs to the current user
       if (req.user && post.author.id === req.user.id) {
         return true;
+      }
+
+      if((!post.author.active) && post.author.id != req.user.id){
+        return false;
       }
 
       // none of the above are true
