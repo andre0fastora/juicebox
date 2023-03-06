@@ -9,7 +9,7 @@ const {
   getUserById,
   updateUser,
 } = require("../db");
-const { requireUser } = require("./utils");
+const { requireUser, requireActiveUser } = require("./utils");
 
 usersRouter.use((req, res, next) => {
   console.log("A request is being made to /users");
@@ -94,7 +94,7 @@ usersRouter.post("/register", async (req, res, next) => {
   }
 });
 
-usersRouter.delete("/:userId", requireUser, async (req, res, next) => {
+usersRouter.delete("/:userId", requireActiveUser, async (req, res, next) => {
   const userId = Number(req.params.userId);
   const _user = await getUserById(userId);
 
@@ -104,9 +104,6 @@ usersRouter.delete("/:userId", requireUser, async (req, res, next) => {
       message: "No user by that username",
     });
   }
-
-  console.log(userId, "<= this is userid from params");
-  console.log(req.user.id, "<= this is ureq.user.id from request object");
 
   if (req.user.id !== userId) {
     next({
@@ -118,6 +115,28 @@ usersRouter.delete("/:userId", requireUser, async (req, res, next) => {
   const deletedUser = await updateUser(userId, { active: false });
   res.send({ DeletedUser: deletedUser });
 });
+
+usersRouter.patch("/:userId", requireUser, async(req,res,next) =>{
+  const userId = Number(req.params.userId);
+  const _user = await getUserById(userId);
+
+  if (!_user) {
+    next({
+      name: "UserDoesNotExistsError",
+      message: "No user by that username",
+    });
+  }
+
+  if (req.user.id !== userId) {
+    next({
+      name: "CannotActivateOtherUser",
+      message: "You can not activate a user that is not you",
+    });
+  }
+
+  const activatedUser = await(updateUser(userId, { active: true }));
+  res.send({ ActivatedUser: activatedUser });
+})
 
 usersRouter.get("/", async (req, res) => {
   const users = await getAllUsers();

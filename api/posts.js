@@ -14,7 +14,7 @@ postsRouter.use((req, res, next) => {
   next(); // THIS IS DIFFERENT
 });
 
-const { requireUser } = require("./utils");
+const { requireUser, requireActiveUser } = require("./utils");
 
 postsRouter.get("/", requireUser, async (req, res, next) => {
   // const posts = await getAllPosts();
@@ -52,7 +52,7 @@ postsRouter.get("/", requireUser, async (req, res, next) => {
   }
 });
 
-postsRouter.post("/", requireUser, async (req, res, next) => {
+postsRouter.post("/", requireActiveUser, async (req, res, next) => {
   const { title, content, tags = "" } = req.body;
 
   const tagArr = tags.trim().split(/\s+/);
@@ -84,7 +84,7 @@ postsRouter.post("/", requireUser, async (req, res, next) => {
   }
 });
 
-postsRouter.patch("/:postId", requireUser, async (req, res, next) => {
+postsRouter.patch("/:postId", requireActiveUser, async (req, res, next) => {
   const { postId } = req.params;
   const { title, content, tags } = req.body;
 
@@ -119,7 +119,7 @@ postsRouter.patch("/:postId", requireUser, async (req, res, next) => {
   }
 });
 
-postsRouter.delete("/:postId", requireUser, async (req, res, next) => {
+postsRouter.delete("/:postId", requireActiveUser, async (req, res, next) => {
   try {
     const post = await getPostById(req.params.postId);
 
